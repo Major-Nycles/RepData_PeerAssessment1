@@ -156,16 +156,15 @@ of November 2012 using correct data was **10,592** and the median was **10,762**
 This makes a notable change to the results without correction shown in **Figure 1**. **Figure 3** shows the change in results of including interpolated values for missing data.
 
 
+
 ```r
 par(mfrow = c(1,2))
 plot(corrected,ylim = c(0,30), 
-     main = "With missing values", 
+     main = "Figure 4a) - With missing values", 
      xlab = "Number of Steps")
 plot(uncorrected, ylim = c(0,30), 
-     main = "Interpolated missing values",
+     main = "Figure 4b) - With interpolated missing values",
      xlab = "Number of Steps")
-
-mtext("title", outer = TRUE, side = 3, cex = 1.5, line = 4)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
@@ -173,6 +172,7 @@ mtext("title", outer = TRUE, side = 3, cex = 1.5, line = 4)
 The effect of interpolating missing values is to significantly reduce the frequency of the smallest bin (0 - 2500) and increase the frquency of the most common bin (10,000 -12,500). This realignment of the data accounts for the increases in mean and median observed.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
 
 
 ```r
@@ -197,7 +197,27 @@ mean_weekends <- weekends %>%
         summarise(mean_steps = mean(total, na.rm = TRUE))
 ```
 
-The activity patterns for Monday to Sunday over this period can be seen below in **Figure 4.**
+
+```r
+data_clone$weekday <- weekdays(data_clone$date)
+data_clone$type_of_day <- sapply(data_clone$weekday, function(x) {
+                if(x == "Monday" | x == "Tuesday" | x == "Wednesday" | x == "Thursday" | x == "Friday") {return("Weekday")}
+                else {return("Weekend")}
+})
+
+type_of_day_summary <- data_clone %>%
+        group_by(type_of_day, interval) %>%
+        summarise(mean_steps = mean(as.numeric(steps), na.rm = TRUE))
+
+require(ggplot2)
+qplot(interval, mean_steps, data = type_of_day_summary, facets = type_of_day~., geom = "line", xlab = "Interval", ylab = "Mean Steps", main = "Figure 4 - Weekday vs. Weekend Activity Levels per 5 minute Interval ")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+**Figure 4** shows the difference in the mean number of steps over the course of 24 hours for this dataset. Weekday activity seems to be more pronounced between 7:30 am and 10:am, perhaps correlating with commute time. General activity during waking hours over the weekend however, seems to be higher. 
+
+The activity patterns for Monday to Sunday over this period can be seen below in **Figure 5.**
 
 
 ```r
@@ -207,27 +227,20 @@ all_week$day <- factor(all_week$day, levels = DOW)
 all_week <- all_week[order(all_week$day),]
 
 require(ggplot2)
-```
-
-```
-## Loading required package: ggplot2
-```
-
-```r
 colours <- c(rep("steelblue",5), rep("red",2))
 g <- ggplot(data = all_week, aes(x = day, y = mean_steps)) + geom_col(fill = colours)
 g <- g + xlab("Day of the Week")
 g <- g + ylab("Mean Number of Steps")
-g <- g + labs(title = "Figure 4 - Daily Comparison of Mean Steps")
+g <- g + labs(title = "Figure 5 - Daily Comparison of Mean Steps")
 show(g)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 Both days of the weekend have higher mean activity levels compared to weekdays. There appears to be a significant decline in activity on a Tuesday and Thursday.
 This may suggest that the user is more active on a weekend, although other causes, such as consistent use during the week, would need to be ruled out first.
 
-**Figure 5** shows the dispersion for the data in question.
+**Figure 6** shows the dispersion for the data in question.
 
 
 ```r
@@ -237,10 +250,10 @@ weekdays_weekends <- weekdays_weekends[order(weekdays_weekends$day),]
 
 p <- ggplot(weekdays_weekends, aes(x = day, y = total)) + geom_boxplot()
 p <- p + xlab("Day of the Week") + ylab("Total Daily Steps")
-p <- p + labs(title = "Figure 5 - Daily Total Steps by Weekday")
+p <- p + labs(title = "Figure 6 - Daily Total Steps by Weekday")
 show(p)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 Upon further inspection, the median step count and inter-quartile range appear to be generally consistent in the data from Wednesdays, Fridays, Saturdays and Sundays. Data from Tuesday and Thursday features a significant proportion of low step counts and the cause of this would need to be investigated further before making declarative conclusions about weekday versus weekend activity levels for this individual.
