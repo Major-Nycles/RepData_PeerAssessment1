@@ -6,7 +6,8 @@ output:
 ---
 
 ## Loading and preprocessing the data
-```{r, echo=TRUE}
+
+```r
 if(!file.exists("data")) {dir.create("data")}
 if(!file.exists("data/activity.csv")) {unzip("activity.zip", exdir = "./data")}
 data <- read.csv(file = "./data/activity.csv")
@@ -27,12 +28,11 @@ names(data)[4:6] <- c("minute","hour","year-hour:minute")
 data[,6] <- paste(data$date," ",data$hour,":",data$minute, sep = "")
 data$date <- as.POSIXct(data$`year-hour:minute`, format = "%Y-%m-%d %H:%M")
 data <- data[-c(4:6)]
-
-
 ```
 
 ## What is mean total number of steps taken per day?
-```{r, echo=TRUE, message=FALSE, warning = FALSE}
+
+```r
 require("dplyr", lib.loc = "http://cran.us.r-project.org")
 library(dplyr)
 daily <- data %>%
@@ -53,15 +53,17 @@ legend("topright",
        col = c("red","blue"), 
        lty = 2, 
        legend = c("mean", "median"))
-
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
 The histogram for the activity levels during this period can be seen in **Figure 1.**The mean number of steps taken per day between the 1st October 2012 and the 30th
-of November 2012 was **`r formatC(daily_mean, big.mark = ",")`** and the median was **`r formatC(daily_median, big.mark = ",")`**.
+of November 2012 was **9,354** and the median was **10,389**.
 
 ## What is the average daily activity pattern?
 
-```{r, echo=TRUE, message=FALSE, warning = FALSE}
+
+```r
 daily_interval <- data %>%
         arrange(interval) %>% 
         group_by(interval) %>%
@@ -99,11 +101,14 @@ legend("topright",
        legend = "8:30am - 8:35am")
 ```
 
-The interval of the day that sees the highest mean number of steps is between  **`r (highest_entry$interval - 5)`am** and **`r highest_entry$interval`am** .
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+The interval of the day that sees the highest mean number of steps is between  **830am** and **835am** .
 
 ## Inputing missing values
 
-```{r, echo=TRUE, message=FALSE, warning = FALSE}
+
+```r
 sum_of_NA <- sum(is.na(data$steps))
 percentage_of_NA <- 100 * sum_of_NA/sum(!is.na(data$steps))
 
@@ -122,14 +127,14 @@ data_clone_stats <- data_clone %>%
         summarise(total = sum(as.numeric(steps)))
 clone_mean <- mean(data_clone_stats$total)
 clone_median <- median(data_clone_stats$total)
-
 ```
 
-There are a total of **`r formatC(sum_of_NA, big.mark = ",")`** missing number of steps in this dataset. This represents **`r round(percentage_of_NA, digits = 1)`%** of the available data. 
+There are a total of **2,304** missing number of steps in this dataset. This represents **15.1%** of the available data. 
 
 Missing values have been filled by replacing the mean number of steps for the appropriate interval found in the rest of the dataset. This dataset with interpolated missing values can be seen in **Figure 2**.
 
-```{r}
+
+```r
 corrected <- hist(data_clone_stats$total, xlab = "Total number of steps", 
      main = "Figure 2 - Interpolated total number of steps over a two month period", 
      ylim = c(0,30), 
@@ -143,12 +148,15 @@ legend("topright",
        lty = 2)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
 The mean number of steps taken per day between the 1st October 2012 and the 30th
-of November 2012 using correct data was **`r formatC(clone_mean, big.mark = ",", format = "f", digits = 0)`** and the median was **`r formatC(clone_median, big.mark = ",", digits = 0, format = 'f')`**. 
+of November 2012 using correct data was **10,592** and the median was **10,762**. 
 
 This makes a notable change to the results without correction shown in **Figure 1**. **Figure 3** shows the change in results of including interpolated values for missing data.
 
-```{r, echo = TRUE}
+
+```r
 par(mfrow = c(1,2))
 plot(corrected,ylim = c(0,30), 
      main = "With missing values", 
@@ -158,15 +166,16 @@ plot(uncorrected, ylim = c(0,30),
      xlab = "Number of Steps")
 
 mtext("title", outer = TRUE, side = 3, cex = 1.5, line = 4)
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 The effect of interpolating missing values is to significantly reduce the frequency of the smallest bin (0 - 2500) and increase the frquency of the most common bin (10,000 -12,500). This realignment of the data accounts for the increases in mean and median observed.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r, echo = TRUE}
 
+```r
 daily_corrected <- data_clone %>%
         group_by(as.Date(date)) %>%
         summarise(total = sum(as.numeric(steps), na.rm = TRUE))
@@ -186,35 +195,42 @@ mean_weekdays <- weekdays %>%
 mean_weekends <- weekends %>%
         group_by(day) %>%
         summarise(mean_steps = mean(total, na.rm = TRUE))
-
-
 ```
 
 The activity patterns for Monday to Sunday over this period can be seen below in **Figure 4.**
 
-```{r, echo = TRUE}
 
+```r
 all_week <- rbind(mean_weekdays, mean_weekends)
 DOW <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 all_week$day <- factor(all_week$day, levels = DOW)
 all_week <- all_week[order(all_week$day),]
 
 require(ggplot2)
+```
+
+```
+## Loading required package: ggplot2
+```
+
+```r
 colours <- c(rep("steelblue",5), rep("red",2))
 g <- ggplot(data = all_week, aes(x = day, y = mean_steps)) + geom_col(fill = colours)
 g <- g + xlab("Day of the Week")
 g <- g + ylab("Mean Number of Steps")
 g <- g + labs(title = "Figure 4 - Daily Comparison of Mean Steps")
 show(g)
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 Both days of the weekend have higher mean activity levels compared to weekdays. There appears to be a significant decline in activity on a Tuesday and Thursday.
 This may suggest that the user is more active on a weekend, although other causes, such as consistent use during the week, would need to be ruled out first.
 
 **Figure 5** shows the dispersion for the data in question.
 
-```{r}
+
+```r
 weekdays_weekends <- rbind(weekdays, weekends)
 weekdays_weekends$day <- factor(weekdays_weekends$day, levels = DOW)
 weekdays_weekends <- weekdays_weekends[order(weekdays_weekends$day),]
@@ -224,5 +240,7 @@ p <- p + xlab("Day of the Week") + ylab("Total Daily Steps")
 p <- p + labs(title = "Figure 5 - Daily Total Steps by Weekday")
 show(p)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 Upon further inspection, the median step count and inter-quartile range appear to be generally consistent in the data from Wednesdays, Fridays, Saturdays and Sundays. Data from Tuesday and Thursday features a significant proportion of low step counts and the cause of this would need to be investigated further before making declarative conclusions about weekday versus weekend activity levels for this individual.
